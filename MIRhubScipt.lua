@@ -31,7 +31,8 @@ local FlySpeed = 60
 local NoclipEnabled = false
 local GodModeEnabled = false
 local FastInteractEnabled = false
-
+ 
+ 
 SecMove:NewSlider("Скорость бега", "Стандарт: 16", 1000, 16, function(s)
     WalkSpeedValue = s
     if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
@@ -276,4 +277,99 @@ end)
 local SecMenu = TabSettings:NewSection("Управление окном")
 SecMenu:NewKeybind("Скрыть / Показать меню", "Клавиша для сворачивания окна", Enum.KeyCode.H, function()
 Library:ToggleUI()
+end)
+
+
+local Section = TabPlayer:NewSection("ESP Settings")
+
+local TabPlayer = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+-- Хранилище Highlight-объектов по игрокам
+local Highlights = {}
+local ESPEnabled = false
+
+-- Создание обводки для игрока
+local function createHighlight(player)
+    if player == LocalPlayer then return end
+    if Highlights[player] then return end
+
+    local function apply(character)
+        -- Если ESP выключили, пока персонаж загружался
+        if not ESPEnabled then return end
+        if not character or not character.Parent then return end
+        -- Удаляем старую обводку, если есть
+        local old = character:FindFirstChild("ESP_Outline")
+        if old then old:Destroy() end
+
+        local hl = Instance.new("Highlight")
+        hl.Name = "ESP_Outline"
+        hl.Adornee = character
+        -- Настройки: только обводка, без заливки
+        hl.FillTransparency = 1          -- заливка полностью прозрачна
+        hl.OutlineTransparency = 0       -- обводка видна
+        hl.OutlineColor = Color3.fromRGB(255, 0, 0) -- красная обводка
+        hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop -- видно сквозь стены
+        hl.Parent = character
+
+        Highlights[player] = hl
+    end
+
+    -- Если персонаж уже есть — сразу применяем
+    if player.Character then
+        apply(player.Character)
+    end
+
+    -- Отслеживаем респавн
+    player.CharacterAdded:Connect(function(char)
+        task.wait(0.2) -- небольшая задержка, чтобы модель успела собраться
+        apply(char)
+    end)
+end
+
+-- Удаление обводки у одного игрока
+local function removeHighlight(player)
+    local hl = Highlights[player]
+    if hl then
+        hl:Destroy()
+        Highlights[player] = nil
+    end
+end
+
+-- Включить ESP для всех текущих игроков
+local function enableESP()
+    for _, player in ipairs(Players:GetPlayers()) do
+        createHighlight(player)
+    end
+end
+
+-- Выключить и очистить все обводки
+local function disableESP()
+    for player, hl in pairs(Highlights) do
+        if hl then hl:Destroy() end
+        Highlights[player] = nil
+    end
+end
+
+-- Обработка новых игроков
+Players.PlayerAdded:Connect(function(player)
+    if ESPEnabled then
+        task.wait(0.3)
+        createHighlight(player)
+    end
+end)
+
+-- Очистка при выходе игрока
+Players.PlayerRemoving:Connect(function(player)
+    removeHighlight(player)
+end)
+
+-- Кнопка включения/выключения в меню Robojini
+Section:NewToggle("Player Outline", "Выделяет игроков обводкой", function(state)
+    ESPEnabled = state
+    if state then
+        enableESP()
+    else
+        disableESP()
+    end
 end)
