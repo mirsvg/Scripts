@@ -438,3 +438,21 @@ Section:NewToggle("Cheese ESP", "Turn on cheese ESP", function(state)
 		end
 	end
 end)
+Section:NewToggle("Rat ESP", "Turn on Rat ESP", function(state)
+    if state then
+local Childr = workspace.Rat.HumanoidRootPart
+local ESP = Instance.new("BoxHandleAdornment",Childr)
+ESP.Adornee = Childr
+ESP.ZIndex = 0
+ESP.Size = Vector3.new(10, 10, 10)
+ESP.Transparency = 0.60
+ESP.Color3 = Color3.fromRGB(255, 0, 0)
+ESP.AlwaysOnTop = true
+ESP.Name = "ESPBoxRat"
+           
+    else
+local Childr = workspace.Rat.HumanoidRootPart
+local ESP = Childr:FindFirstChild("ESPBoxRat")
+ESP:Destroy()
+    end
+end)
