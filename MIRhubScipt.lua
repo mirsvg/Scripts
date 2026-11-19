@@ -373,3 +373,68 @@ Section:NewToggle("Player Outline", "Выделяет игроков обвод�
         disableESP()
     end
 end)
+local ESPTab = Window:NewTab("Сheese Escape")
+
+local Section = ESPTab:NewSection("ESP")
+
+Section:NewToggle("Mouse ESP", "Turn on mouse ESP", function(state)
+    if state then
+local Childr = workspace.Mouse.HumanoidRootPart
+local ESP = Instance.new("BoxHandleAdornment",Childr)
+ESP.Adornee = Childr
+ESP.ZIndex = 0
+ESP.Size = Vector3.new(10, 10, 10)
+ESP.Transparency = 0.60
+ESP.Color3 = Color3.fromRGB(255, 0, 0)
+ESP.AlwaysOnTop = true
+ESP.Name = "ESPBoxMouse"
+           
+    else
+local Childr = workspace.Mouse.HumanoidRootPart
+local ESP = Childr:FindFirstChild("ESPBoxMouse")
+ESP:Destroy()
+    end
+end)
+
+local cheeseEspEnabled = false
+
+Section:NewToggle("Cheese ESP", "Turn on cheese ESP", function(state)
+	cheeseEspEnabled = state
+
+	if cheeseEspEnabled then
+		-- Запускаем постоянную проверку в фоновом потоке, чтобы меню не зависло
+		task.spawn(function()
+			while cheeseEspEnabled do
+				for _, Childr in ipairs(workspace:GetDescendants()) do
+					local hasCheese = Childr:FindFirstChild("Cheese")
+					local espBox = Childr:FindFirstChild("ESPBox")
+
+					if hasCheese and Childr ~= game.Players.LocalPlayer.Character then
+						if not espBox then
+							local ESP = Instance.new("BoxHandleAdornment")
+							ESP.Name = "ESPBox"
+							ESP.Adornee = Childr
+							ESP.ZIndex = 0
+							ESP.Size = Vector3.new(1, 1, 1)
+							ESP.Transparency = 0.60
+							ESP.Color3 = Color3.fromRGB(0, 255, 0)
+							ESP.AlwaysOnTop = true
+							ESP.Parent = Childr
+						end
+					elseif espBox then
+						-- Сразу удаляем подсветку, если сыр внутри Childr пропал
+						espBox:Destroy()
+					end
+				end
+				task.wait(0.2)
+			end
+		end)
+	else
+		-- При выключении тумблера удаляем все оставшиеся ESPBox
+		for _, obj in ipairs(workspace:GetDescendants()) do
+			if obj.Name == "ESPBox" and obj:IsA("BoxHandleAdornment") then
+				obj:Destroy()
+			end
+		end
+	end
+end)
